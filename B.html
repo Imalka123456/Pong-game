@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <h1>LET'S ENJOY</h1> 
+    <title>Pong Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            background-color: #000;
+            display: block;
+        }
+        #score {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+        #startButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #startButton:hover {
+            background-color: #45a049;
+        }
+        @media (max-width: 600px) {
+            #gameCanvas {
+                width: 100%;
+                max-width: 300px;
+                height: auto;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            #score {
+                font-size: 18px;
+            }
+            #startButton {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Pong Game</h1>
+    <canvas id="gameCanvas" width="400" height="300"></canvas>
+    <div id="score">Player: 0 | Computer: 0</div>
+    <button id="startButton">Start Game</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const startButton = document.getElementById('startButton');
+
+        let playerScore = 0;
+        let computerScore = 0;
+        let gameRunning = false;
+
+        // Paddle properties
+        const paddleWidth = 10;
+        const paddleHeight = 80;
+        let playerY = canvas.height / 2 - paddleHeight / 2;
+        let computerY = canvas.height / 2 - paddleHeight / 2;
+
+        // Ball properties
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballSpeedX = 5;
+        let ballSpeedY = 3;
+        const ballRadius = 10;
+
+        // Mouse movement for player paddle
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            playerY = e.clientY - rect.top - paddleHeight / 2;
+            if (playerY < 0) playerY = 0;
+            if (playerY > canvas.height - paddleHeight) playerY = canvas.height - paddleHeight;
+        });
+
+        // Start game
+        startButton.addEventListener('click', () => {
+            if (!gameRunning) {
+                gameRunning = true;
+                startButton.textContent = 'Restart Game';
+                resetBall();
+                gameLoop();
+            } else {
+                // Reset scores and ball
+                playerScore = 0;
+                computerScore = 0;
+                scoreDisplay.textContent = `Player: ${playerScore} | Computer: ${computerScore}`;
+                resetBall();
+            }
+        });
+
+        function resetBall() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballSpeedX = Math.random() > 0.5 ? 5 : -5;
+            ballSpeedY = Math.random() > 0.5 ? 3 : -3;
+        }
+
+        function update() {
+            // Move ball
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Ball collision with top and bottom
+            if (ballY - ballRadius <= 0 || ballY + ballRadius >= canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Ball collision with player paddle
+            if (ballX - ballRadius <= paddleWidth && ballY >= playerY && ballY <= playerY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Ball collision with computer paddle
+            if (ballX + ballRadius >= canvas.width - paddleWidth && ballY >= computerY && ballY <= computerY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Score
+            if (ballX < 0) {
+                computerScore++;
+                resetBall();
+            } else if (ballX > canvas.width) {
+                playerScore++;
+                resetBall();
+            }
+
+            // Computer AI
+            const computerSpeed = 4;
+            if (computerY + paddleHeight / 2 < ballY) {
+                computerY += computerSpeed;
+            } else {
+                computerY -= computerSpeed;
+            }
+            if (computerY < 0) computerY = 0;
+            if (computerY > canvas.height - paddleHeight) computerY = canvas.height - paddleHeight;
+
+            scoreDisplay.textContent = `Player: ${playerScore} | Computer: ${computerScore}`;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw paddles
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, computerY, paddleWidth, paddleHeight);
+
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw center line
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
